@@ -1,22 +1,17 @@
 # 介绍(2015)
 
-ucore OS是用于清华大学计算机系本科操作系统课程的OS教学试验内容。
-ucore OS起源于MIT CSAIL PDOS课题组开发的xv6&jos、哈佛大学开发的
-OS161教学操作系统、以及Linux-2.4内核。
+uCore OS Labs是用于清华大学计算机系本科操作系统课程的教学试验内容。
 
-ucore OS中包含的xv6&jos代码版权属于Frans Kaashoek, Robert Morris,
-and Russ Cox，使用MIT License。ucore OS中包含的OS/161代码版权属于
-David A. Holland。其他代码版权属于陈渝、王乃铮、向勇，并采用GPL License.
-ucore OS相关的文档版权属于陈渝、向勇，并采用 Creative Commons 
-Attribution/Share-Alike (CC-BY-SA) License. 
 
 # 实验总体流程
 1. 在[学堂在线](https://www.xuetangx.com/courses/TsinghuaX/30240243X/2015_T1/about)查看OS相关原理和labX的视频；
-2. 在[实验指导书 on gitbook](http://objectkuan.gitbooks.io/ucore-docs/)上阅读实验指导书；
+2. 在[实验指导书 on gitbook](http://objectkuan.gitbooks.io/ucore-docs/)上阅读实验指导书，并参考其内容完成练习和实验报告；
 3. 在实验环境中完成实验并提交实验到git server（清华学生需要在学校内部的git server上，其他同学可提交在其他git server上）；
 4. 如实验中碰到问题，在[在线OS课程问题集](http://xuyongjiande.gitbooks.io/os-qa/)查找是否已经有解答；
-5. 如没有解答，可在[在线OS课程问答和交流区](https://piazza.com/tsinghua.edu.cn/spring2015/30240243x/home)提问。（QQ群 181873534主要用于OS课程一般性交流）；
+5. 每天（一周七日）都有助教或老师在piazza在线答疑。如在[在线OS课程问题集](http://xuyongjiande.gitbooks.io/os-qa/)没找到解答，可到[piazza在线OS课程问答和交流区](https://piazza.com/tsinghua.edu.cn/spring2015/30240243x/home)提问。（QQ群 181873534主要用于本课程和OS相关事件发布，以及各种一般性交流）；
 6. 可进一步在[学堂在线](https://www.xuetangx.com/courses/TsinghuaX/30240243X/2015_T1/about)或[在线的操作系统课程练习题](https://www.gitbook.io/book/xuyongjiande/os_exercises)完成实验相关的练习题；
+
+> 【提醒】[实验指导书 on gitbook](http://objectkuan.gitbooks.io/ucore-docs/)中会存在一些bug，欢迎在在[piazza在线OS课程问答和交流区](https://piazza.com/tsinghua.edu.cn/spring2015/30240243x/home)提出，会有奖分！
 
 # 实验内容
 ## 实验指导书
@@ -73,22 +68,27 @@ ucore OS实验了。
 口令是 <空格键>
 ```
 
-### 手动在VirtualBox虚拟机中安装ubuntu 14.04 和实验环境相关软件
-（这里假定安装的要是ubuntu14.04 x86-64的系统）
+### 手动在物理PC或VirtualBox中安装ubuntu 14.04 64bit 和实验环境相关软件
 -------------------------------------
+（这里假定安装的要是ubuntu14.04 x86-64的系统）
 
-1) 在VirtualBox上安装ubuntu 
-下载ubuntu 14.04 img镜像，并在VirtualBox中安装系统。
+1) 在物理PC或VirtualBox上安装ubuntu 
 
-建议a: 设置虚拟硬盘的大小为8GB以上，虚拟内存在512MB以上。
-建议b: 如果你的机器安装的是32位的windows，则下载32位的ubuntu 14.04 img镜像。
+下载ubuntu 14.04 64bit img镜像，
+   
+  1.1) 需要把镜像刻录到可启动的光盘或闪盘中,把光盘或闪盘放入物理P，并在物理PC上重启安装。
+  
+  1.2）在配置VirtuaBo虚拟环境中，选择虚拟光盘的来源为下载的ubuntu 14.04 64bit img镜，然后启动irtualBox中新建的虚拟系统进行安装。
+
+建议a: 设置虚拟硬盘的大小为8GB以上，虚拟内存在1B以上。
+建议b: 如果你的机器安装的是32位的windows，则下载32位的ubuntu 14.04 32bit img镜像。
 
 2) 在ubuntu系统中安装实验环境相关软件
 在shell（比如gnome-terminal）下可执行如下命令来安装相关软件 (“$”是shell的提示符，不用输入)
 ```
   $ sudo apt-get update
   $ sudo apt-get upgrade
-  $ sudo apt-get install build-essential git qemu-system-x86 vim-gnome gdb cgdb eclipse-cdt make diffutils exuberant-ctags tmux openssh-server cscope meld
+  $ sudo apt-get install build-essential git qemu-system-x86 vim-gnome gdb cgdb eclipse-cdt make diffutils exuberant-ctags tmux openssh-server cscope meld gcc-multilib g++-multilib
 ```
 [NOTICE] 最小需要的安装包： build-essential git qemu-system-x86 gdb make diffutils 
 
@@ -212,6 +212,16 @@ https://www.xuetangx.com/courses/TsinghuaX/30240243X/2015_T1/about
 曹正、沈彤、陈旭、蓝昶、方宇剑、韩文涛、张凯成、
 S郭晓林、薛天凡、胡刚、刘超、粟裕、袁昕颢...
 
+# 版权信息
+
+ucore OS起源于MIT CSAIL PDOS课题组开发的xv6&jos、哈佛大学开发的
+OS161教学操作系统、以及Linux-2.4内核。
+
+ucore OS中包含的xv6&jos代码版权属于Frans Kaashoek, Robert Morris,
+and Russ Cox，使用MIT License。ucore OS中包含的OS/161代码版权属于
+David A. Holland。其他代码版权属于陈渝、王乃铮、向勇，并采用GPL License.
+ucore OS相关的文档版权属于陈渝、向勇，并采用 Creative Commons 
+Attribution/Share-Alike (CC-BY-SA) License. 
 
 # NOTICE
 

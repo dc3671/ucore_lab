@@ -14,4 +14,3 @@ int main()
     list_init(ll);
     return 0;
 }
-
