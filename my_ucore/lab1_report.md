@@ -3,7 +3,73 @@
 
 [练习1.1] 操作系统镜像文件 ucore.img 是如何一步一步生成的?(需要比较详细地解释 Makefile 中每一条相关命令和命令参数的含义,以及说明命令导致的结果)
 
-- 先在Makfile里查找ucore.img，发现：
+- 先运行`make "V="`查看make的过程，如下：
+
+```
++ cc kern/init/init.c
+gcc -Ikern/init/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/init/init.c -o obj/kern/init/init.o
+kern/init/init.c:95:1: warning: ‘lab1_switch_test’ defined but not used [-Wunused-function]
+ lab1_switch_test(void) {
+ ^
++ cc kern/libs/stdio.c
+gcc -Ikern/libs/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/libs/stdio.c -o obj/kern/libs/stdio.o
++ cc kern/libs/readline.c
+gcc -Ikern/libs/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/libs/readline.c -o obj/kern/libs/readline.o
++ cc kern/debug/panic.c
+gcc -Ikern/debug/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/debug/panic.c -o obj/kern/debug/panic.o
++ cc kern/debug/kdebug.c
+gcc -Ikern/debug/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/debug/kdebug.c -o obj/kern/debug/kdebug.o
++ cc kern/debug/kmonitor.c
+gcc -Ikern/debug/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/debug/kmonitor.c -o obj/kern/debug/kmonitor.o
++ cc kern/driver/clock.c
+gcc -Ikern/driver/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/driver/clock.c -o obj/kern/driver/clock.o
++ cc kern/driver/console.c
+gcc -Ikern/driver/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/driver/console.c -o obj/kern/driver/console.o
++ cc kern/driver/picirq.c
+gcc -Ikern/driver/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/driver/picirq.c -o obj/kern/driver/picirq.o
++ cc kern/driver/intr.c
+gcc -Ikern/driver/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/driver/intr.c -o obj/kern/driver/intr.o
++ cc kern/trap/trap.c
+gcc -Ikern/trap/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/trap/trap.c -o obj/kern/trap/trap.o
++ cc kern/trap/vectors.S
+gcc -Ikern/trap/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/trap/vectors.S -o obj/kern/trap/vectors.o
++ cc kern/trap/trapentry.S
+gcc -Ikern/trap/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/trap/trapentry.S -o obj/kern/trap/trapentry.o
++ cc kern/mm/pmm.c
+gcc -Ikern/mm/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Ikern/debug/ -Ikern/driver/ -Ikern/trap/ -Ikern/mm/ -c kern/mm/pmm.c -o obj/kern/mm/pmm.o
++ cc libs/string.c
+gcc -Ilibs/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/  -c libs/string.c -o obj/libs/string.o
++ cc libs/printfmt.c
+gcc -Ilibs/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/  -c libs/printfmt.c -o obj/libs/printfmt.o
++ ld bin/kernel
+ld -m    elf_i386 -nostdlib -T tools/kernel.ld -o bin/kernel  obj/kern/init/init.o obj/kern/libs/stdio.o obj/kern/libs/readline.o obj/kern/debug/panic.o obj/kern/debug/kdebug.o obj/kern/debug/kmonitor.o obj/kern/driver/clock.o obj/kern/driver/console.o obj/kern/driver/picirq.o obj/kern/driver/intr.o obj/kern/trap/trap.o obj/kern/trap/vectors.o obj/kern/trap/trapentry.o obj/kern/mm/pmm.o  obj/libs/string.o obj/libs/printfmt.o
++ cc boot/bootasm.S
+gcc -Iboot/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Os -nostdinc -c boot/bootasm.S -o obj/boot/bootasm.o
++ cc boot/bootmain.c
+gcc -Iboot/ -fno-builtin -Wall -ggdb -m32 -gstabs -nostdinc  -fno-stack-protector -Ilibs/ -Os -nostdinc -c boot/bootmain.c -o obj/boot/bootmain.o
++ cc tools/sign.c
+gcc -Itools/ -g -Wall -O2 -c tools/sign.c -o obj/sign/tools/sign.o
+gcc -g -Wall -O2 obj/sign/tools/sign.o -o bin/sign
++ ld bin/bootblock
+ld -m    elf_i386 -nostdlib -N -e start -Ttext 0x7C00 obj/boot/bootasm.o obj/boot/bootmain.o -o obj/bootblock.o
+'obj/bootblock.out' size: 468 bytes
+build 512 bytes boot sector: 'bin/bootblock' success!
+dd if=/dev/zero of=bin/ucore.img count=10000
+10000+0 records in
+10000+0 records out
+5120000 bytes (5.1 MB) copied, 0.300637 s, 17.0 MB/s
+dd if=bin/bootblock of=bin/ucore.img conv=notrunc
+1+0 records in
+1+0 records out
+512 bytes (512 B) copied, 0.000160774 s, 3.2 MB/s
+dd if=bin/kernel of=bin/ucore.img seek=1 conv=notrunc
+146+1 records in
+146+1 records out
+74943 bytes (75 kB) copied, 0.00435781 s, 17.2 MB/s
+```
+
+- 过程为先编译kdebug.c/trap.c，再链接kernel，最后把bootblock和kernel导入ucore.img
+- 再根据过程查看makefile，可以在Makfile里查找ucore.img，发现：
 
 ```
 # create ucore.img
@@ -178,7 +244,7 @@ dd if=bin/kernel of=bin/ucore.img seek=1 conv=notrunc
 
 [练习1.2] 一个被系统认为是符合规范的硬盘主引导扇区的特征是什么?
 
-- 从sign.c的代码来看，一个磁盘主引导扇区只有512字节。且
+- 从sign.c的代码来看，一个磁盘主引导扇区只有512字节。且`st_size`只限制为小于510，于是最后两个字节是标志位。
 - 第510个（倒数第二个）字节是0x55，
 - 第511个（倒数第一个）字节是0xAA。
 
@@ -186,21 +252,50 @@ dd if=bin/kernel of=bin/ucore.img seek=1 conv=notrunc
 
 [练习2.1] 从 CPU 加电后执行的第一条指令开始,单步跟踪 BIOS 的执行。
 
+- 在makefile里修改debug相关，并将terminal设为konsole
+
+```
+TERMINAL        :=konsole
+debug: $(UCOREIMG)
+    $(V)$(TERMINAL) -e "$(QEMU) -S -s -d in_asm -D $(BINDIR)/q.log -parallel stdio -hda $< -serial null"
+    $(V)sleep 2
+    $(V)$(TERMINAL) -e "gdb -q -tui -x tools/gdbinit"
+```
+
+- 执行`make debug`后，显示为默认的断点init()，可以了解到通过修改gdbinit改变其默认命令。
+
 [练习2.2] 在初始化位置0x7c00 设置实地址断点,测试断点正常。
+
+- 在gdbinit写入如下代码：
+
+```
+file bin/kernel
+target remote :1234
+b *0x7c00
+```
+
+- 结果显示：
+
+```
+0x0000fff0 in ?? ()
+Breakpoint 1 at 0x7c00
+```
+
+- 一切正常。
 
 [练习2.3] 在调用qemu 时增加-d in_asm -D q.log 参数，便可以将运行的汇编指令保存在q.log 中。将执行的汇编代码与bootasm.S 和 bootblock.asm 进行比较，看看二者是否一致。
 
-- 在tools/gdbinit结尾加上
+- 在gdbinit结尾加上，或者直接在0x7c00断点处输入：
 
 ```
-b *0x7c00
-c
 x /10i $pc
 ```
 
-- 便可以在q.log中读到"call bootmain"前执行的命令，其与bootasm.S和bootblock.asm中的代码相同。
+- 便可以在屏幕上或者q.log中读到将要执行的命令，其与bootasm.S和bootblock.asm中的代码相同。
 
-[练习3] 分析bootloader 进入保护模式的过程。
+## 练习3 ##
+
+分析bootloader 进入保护模式的过程。
 
 - 从%cs=0 $pc=0x7c00，进入后，首先清理环境：包括将flag置0和将段寄存器置0
 
@@ -232,7 +327,7 @@ seta20.1:               # 等待8042键盘控制器不忙
 
     movb $0xdf, %al     # 打开A20
     outb %al, $0x60     # 
-```    
+```
 
 - 初始化GDT表：一个简单的GDT表和其描述符已经静态储存在引导区中，载入即可
 
@@ -275,9 +370,11 @@ movl $start, %esp
 call bootmain
 ```
 
-[练习4] ：分析bootloader加载ELF格式的OS的过程。
+## 练习4 ##
 
-- 首先看`readsect`函数，`readsect`从设备的第`secno`扇区读取数据到`dst`位置
+分析bootloader如何读取硬盘扇区的。分析bootloader加载ELF格式的OS的过程。
+
+- 读取扇区的功能由readsect和readseg函数实现。首先看`readsect`函数，`readsect`从设备的第`secno`扇区读取数据到`dst`位置
 
 ```
 static void
@@ -322,7 +419,7 @@ readseg(uintptr_t va, uint32_t count, uint32_t offset) {
 }
 ```
 
-- 在bootmain函数中，
+- 在bootmain函数中，实现了加载ELF文件的功能。
 
 ```
 void
@@ -359,26 +456,43 @@ bad:
 }
 ```
 
-[练习5] 实现函数调用堆栈跟踪函数 
+## 练习5 ##
 
+实现函数调用堆栈跟踪函数 
+
+- 由于函数调用时需要将ebp和eip分别压栈以保存栈帧结构和返回地址，故根据当前的ebp值就可以一直递归寻找栈中的调用顺序，每次在栈中读出每个函数调用时的ebp和eip即可。
 - `ss:ebp`指向的堆栈位置储存着`caller`的`ebp`，以此为线索可以得到所有使用堆栈的函数`ebp`。
 - `ss:ebp+4`指向`caller`调用时的`eip`，`ss:ebp+8`等是（可能的）参数。
-- 输出中，堆栈最深一层为
+- 执行`make qemu`后的输出中：
 
 ```
-ebp:0x00007bf8 eip:0x00007d68 \
-    args:0x00000000 0x00000000 0x00000000 0x00007c4f
-    <unknow>: -- 0x00007d67 --
+Kernel executable memory footprint: 64KB
+ebp:0x00007b18 eip:0x00100a18 args:0x00010094 0x00000000 0x00007b48 0x0010007f 
+    kern/debug/kdebug.c:306: print_stackframe+21
+ebp:0x00007b28 eip:0x00100d16 args:0x00000000 0x00000000 0x00000000 0x00007b98 
+    kern/debug/kmonitor.c:125: mon_backtrace+10
+ebp:0x00007b48 eip:0x0010007f args:0x00000000 0x00007b70 0xffff0000 0x00007b74 
+    kern/init/init.c:48: grade_backtrace2+19
+ebp:0x00007b68 eip:0x001000a0 args:0x00000000 0xffff0000 0x00007b94 0x00000029 
+    kern/init/init.c:53: grade_backtrace1+27
+ebp:0x00007b88 eip:0x001000bc args:0x00000000 0x00100000 0xffff0000 0x00100043 
+    kern/init/init.c:58: grade_backtrace0+19
+ebp:0x00007ba8 eip:0x001000dc args:0x00000000 0x00000000 0x00000000 0x001033c0 
+    kern/init/init.c:63: grade_backtrace+26
+ebp:0x00007bc8 eip:0x00100050 args:0x00000000 0x00000000 0x00010094 0x00000000 
+    kern/init/init.c:28: kern_init+79
+ebp:0x00007bf8 eip:0x00007d66 args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8 
+    <unknow>: -- 0x00007d65 --
 ```
 
-- 其对应的是第一个使用堆栈的函数，bootmain.c中的`bootmain`。
+- 最后一行对应的是第一个使用堆栈的函数，bootmain.c中的`bootmain`。
 - bootloader设置的堆栈从`0x7c00`开始，使用`call bootmain`转入`bootmain`函数。`call`指令压栈，所以`bootmain`中`ebp`为`0x7bf8`。
 
-[练习6] 完善中断初始化和处理
+## 练习6 ##
 
 [练习6.1] 中断向量表中一个表项占多少字节？其中哪几位代表中断处理代码的入口？
 
-- 中断向量表一个表项占用8字节，其中2-3字节是段选择子，0-1字节和6-7字节拼成位移，两者联合便是中断处理程序的入口地址。
+- 观察vector.S文件，从各个中断向量的初始值可以看出，汇编代码执行了2次pushl操作，一共将8字节的数据压栈，故中断向量表一个表项长度为8 byte。其中第2-3byte指的是段号，0-1字节和6-7字节指的是段内偏移，两者联合便是中断例程的入口地址。
 
 [练习6.2] 请编程完善kern/trap/trap.c中对中断向量表进行初始化的函数idt_init。
 - 见代码
