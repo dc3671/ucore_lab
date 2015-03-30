@@ -1015,6 +1015,20 @@ body .markdown-body
   }
 }
 </style><title>lab1_report</title></head><body><article class="markdown-body"><h1 id="lab1-report"><a name="user-content-lab1-report" href="#lab1-report" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>Lab1 report</h1>
+<div class="toc">
+<ul>
+<li><a href="#lab1-report">Lab1 report</a><ul>
+<li><a href="#1">练习1</a></li>
+<li><a href="#2">练习2</a></li>
+<li><a href="#3">练习3</a></li>
+<li><a href="#4">练习4</a></li>
+<li><a href="#5">练习5</a></li>
+<li><a href="#6">练习6</a></li>
+<li><a href="#_1">重要知识点</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <h2 id="1"><a name="user-content-1" href="#1" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习1</h2>
 <p>[练习1.1] 操作系统镜像文件 ucore.img 是如何一步一步生成的?(需要比较详细地解释 Makefile 中每一条相关命令和命令参数的含义,以及说明命令导致的结果)</p>
 <ul>
@@ -1255,24 +1269,53 @@ $(KCFLAGS))
 
 <p>[练习1.2] 一个被系统认为是符合规范的硬盘主引导扇区的特征是什么?</p>
 <ul>
-<li>从sign.c的代码来看，一个磁盘主引导扇区只有512字节。且</li>
+<li>从sign.c的代码来看，一个磁盘主引导扇区只有512字节。且<code>st_size</code>只限制为小于510，于是最后两个字节是标志位。</li>
 <li>第510个（倒数第二个）字节是0x55，</li>
 <li>第511个（倒数第一个）字节是0xAA。</li>
 </ul>
 <h2 id="2"><a name="user-content-2" href="#2" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习2</h2>
 <p>[练习2.1] 从 CPU 加电后执行的第一条指令开始,单步跟踪 BIOS 的执行。</p>
-<p>[练习2.2] 在初始化位置0x7c00 设置实地址断点,测试断点正常。</p>
-<p>[练习2.3] 在调用qemu 时增加-d in_asm -D q.log 参数，便可以将运行的汇编指令保存在q.log 中。将执行的汇编代码与bootasm.S 和 bootblock.asm 进行比较，看看二者是否一致。</p>
 <ul>
-<li>在tools/gdbinit结尾加上</li>
+<li>在makefile里修改debug相关，并将terminal设为konsole</li>
 </ul>
-<pre><code>b *0x7c00
-c
-x /10i $pc
+<pre><code>TERMINAL        :=konsole
+debug: $(UCOREIMG)
+    $(V)$(TERMINAL) -e &quot;$(QEMU) -S -s -d in_asm -D $(BINDIR)/q.log -parallel stdio -hda $&lt; -serial null&quot;
+    $(V)sleep 2
+    $(V)$(TERMINAL) -e &quot;gdb -q -tui -x tools/gdbinit&quot;
 </code></pre>
 
 <ul>
-<li>便可以在q.log中读到&rdquo;call bootmain&rdquo;前执行的命令，其与bootasm.S和bootblock.asm中的代码相同。</li>
+<li>执行<code>make debug</code>后，显示为默认的断点init()，可以了解到通过修改gdbinit改变其默认命令。</li>
+</ul>
+<p>[练习2.2] 在初始化位置0x7c00 设置实地址断点,测试断点正常。</p>
+<ul>
+<li>在gdbinit写入如下代码：</li>
+</ul>
+<pre><code>file bin/kernel
+target remote :1234
+b *0x7c00
+</code></pre>
+
+<ul>
+<li>结果显示：</li>
+</ul>
+<pre><code>0x0000fff0 in ?? ()
+Breakpoint 1 at 0x7c00
+</code></pre>
+
+<ul>
+<li>一切正常。</li>
+</ul>
+<p>[练习2.3] 在调用qemu 时增加-d in_asm -D q.log 参数，便可以将运行的汇编指令保存在q.log 中。将执行的汇编代码与bootasm.S 和 bootblock.asm 进行比较，看看二者是否一致。</p>
+<ul>
+<li>在gdbinit结尾加上，或者直接在0x7c00断点处输入：</li>
+</ul>
+<pre><code>x /10i $pc
+</code></pre>
+
+<ul>
+<li>便可以在屏幕上或者q.log中读到将要执行的命令，其与bootasm.S和bootblock.asm中的代码相同。</li>
 </ul>
 <h2 id="3"><a name="user-content-3" href="#3" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习3</h2>
 <p>分析bootloader 进入保护模式的过程。</p>
@@ -1350,9 +1393,9 @@ movl $start, %esp
 </code></pre>
 
 <h2 id="4"><a name="user-content-4" href="#4" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习4</h2>
-<p>分析bootloader加载ELF格式的OS的过程。</p>
+<p>分析bootloader如何读取硬盘扇区的。分析bootloader加载ELF格式的OS的过程。</p>
 <ul>
-<li>首先看<code>readsect</code>函数，<code>readsect</code>从设备的第<code>secno</code>扇区读取数据到<code>dst</code>位置</li>
+<li>读取扇区的功能由readsect和readseg函数实现。首先看<code>readsect</code>函数，<code>readsect</code>从设备的第<code>secno</code>扇区读取数据到<code>dst</code>位置</li>
 </ul>
 <pre><code>static void
 readsect(void *dst, uint32_t secno) {
@@ -1397,7 +1440,7 @@ readseg(uintptr_t va, uint32_t count, uint32_t offset) {
 </code></pre>
 
 <ul>
-<li>在bootmain函数中，</li>
+<li>在bootmain函数中，实现了加载ELF文件的功能。</li>
 </ul>
 <pre><code>void
 bootmain(void) {
@@ -1436,25 +1479,45 @@ bad:
 <h2 id="5"><a name="user-content-5" href="#5" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习5</h2>
 <p>实现函数调用堆栈跟踪函数 </p>
 <ul>
+<li>由于函数调用时需要将ebp和eip分别压栈以保存栈帧结构和返回地址，故根据当前的ebp值就可以一直递归寻找栈中的调用顺序，每次在栈中读出每个函数调用时的ebp和eip即可。</li>
 <li><code>ss:ebp</code>指向的堆栈位置储存着<code>caller</code>的<code>ebp</code>，以此为线索可以得到所有使用堆栈的函数<code>ebp</code>。</li>
 <li><code>ss:ebp+4</code>指向<code>caller</code>调用时的<code>eip</code>，<code>ss:ebp+8</code>等是（可能的）参数。</li>
-<li>输出中，堆栈最深一层为</li>
+<li>执行<code>make qemu</code>后的输出中：</li>
 </ul>
-<pre><code>ebp:0x00007bf8 eip:0x00007d68 \
-    args:0x00000000 0x00000000 0x00000000 0x00007c4f
-    &lt;unknow&gt;: -- 0x00007d67 --
+<pre><code>Kernel executable memory footprint: 64KB
+ebp:0x00007b18 eip:0x00100a18 args:0x00010094 0x00000000 0x00007b48 0x0010007f 
+    kern/debug/kdebug.c:306: print_stackframe+21
+ebp:0x00007b28 eip:0x00100d16 args:0x00000000 0x00000000 0x00000000 0x00007b98 
+    kern/debug/kmonitor.c:125: mon_backtrace+10
+ebp:0x00007b48 eip:0x0010007f args:0x00000000 0x00007b70 0xffff0000 0x00007b74 
+    kern/init/init.c:48: grade_backtrace2+19
+ebp:0x00007b68 eip:0x001000a0 args:0x00000000 0xffff0000 0x00007b94 0x00000029 
+    kern/init/init.c:53: grade_backtrace1+27
+ebp:0x00007b88 eip:0x001000bc args:0x00000000 0x00100000 0xffff0000 0x00100043 
+    kern/init/init.c:58: grade_backtrace0+19
+ebp:0x00007ba8 eip:0x001000dc args:0x00000000 0x00000000 0x00000000 0x001033c0 
+    kern/init/init.c:63: grade_backtrace+26
+ebp:0x00007bc8 eip:0x00100050 args:0x00000000 0x00000000 0x00010094 0x00000000 
+    kern/init/init.c:28: kern_init+79
+ebp:0x00007bf8 eip:0x00007d66 args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8 
+    &lt;unknow&gt;: -- 0x00007d65 --
 </code></pre>
 
 <ul>
-<li>其对应的是第一个使用堆栈的函数，bootmain.c中的<code>bootmain</code>。</li>
+<li>最后一行对应的是第一个使用堆栈的函数，bootmain.c中的<code>bootmain</code>。</li>
 <li>bootloader设置的堆栈从<code>0x7c00</code>开始，使用<code>call bootmain</code>转入<code>bootmain</code>函数。<code>call</code>指令压栈，所以<code>bootmain</code>中<code>ebp</code>为<code>0x7bf8</code>。</li>
 </ul>
 <h2 id="6"><a name="user-content-6" href="#6" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>练习6</h2>
 <p>[练习6.1] 中断向量表中一个表项占多少字节？其中哪几位代表中断处理代码的入口？</p>
 <ul>
-<li>中断向量表一个表项占用8字节，其中2-3字节是段选择子，0-1字节和6-7字节拼成位移，两者联合便是中断处理程序的入口地址。</li>
+<li>观察vector.S文件，从各个中断向量的初始值可以看出，汇编代码执行了2次pushl操作，一共将8字节的数据压栈，故中断向量表一个表项长度为8 byte。其中第2-3byte指的是段号，0-1字节和6-7字节指的是段内偏移，两者联合便是中断例程的入口地址。</li>
 </ul>
 <p>[练习6.2] 请编程完善kern/trap/trap.c中对中断向量表进行初始化的函数idt_init。<br />
 - 见代码</p>
 <p>[练习6.3] 请编程完善trap.c中的中断处理函数trap，在对时钟中断进行处理的部分填写trap函数<br />
-- 见代码</p></article></body></html>
+- 见代码</p>
+<h2 id="_1"><a name="user-content-_1" href="#_1" class="headeranchor-link" aria-hidden="true"><span class="headeranchor"></span></a>重要知识点</h2>
+<ul>
+<li>本实验研究了从BIOS、bootloader、硬盘以及CPU、GDT、IDT等一系列系统启动过程的设置，因为是实验，偏向于对代码实现的理解，所以对于实验环境、调式工具的使用有所涉及，也更专注于考察对实现细节的理解，而OS原理课上毕竟时间有限，不可能对方方面面都讲得特别细，所以对于启动部分只是简单介绍了流程，以及不同启动方法BIOS、UEFI的区别，而IDT、GDT等概念也只是讲述了其在系统运作过程中的作用和功能，具体如何去实现必定只能在实验代码里进行理解。</li>
+<li>没有对应知识点的，比如硬件中断、系统调用的流程，尽管代码里有相应的实现，但是在没有引导的情况下，对于复杂的工程实在感觉无从下手。</li>
+</ul></article></body></html>

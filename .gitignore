@@ -17,3 +17,6 @@ tags
 a.out
 make.log
 *.exe
+*.o
+*.udb
+.fuse*
