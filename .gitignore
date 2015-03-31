@@ -20,3 +20,4 @@ make.log
 *.o
 *.udb
 .fuse*
+.projectile
