@@ -215,7 +215,7 @@ struct taskstate {
 // construct linear address from indexes and offset
 #define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
-// address in page table or page directory entry
+// address in page table or page directory entry. get the low 12 bit.
 #define PTE_ADDR(pte)   ((uintptr_t)(pte) & ~0xFFF)
 #define PDE_ADDR(pde)   PTE_ADDR(pde)
 

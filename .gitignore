@@ -14,10 +14,12 @@ tags
 .codelite
 *.project
 *.workspace
-a.out
-make.log
+*.out
 *.exe
 *.o
 *.udb
 .fuse*
-.projectile
+*.projectile
+*.html
+*.pdf
+*.log
