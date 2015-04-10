@@ -224,31 +224,31 @@ endif
 
 # files for grade script
 
-TARGETS: $(TARGETS)
+targets: $(TARGETS)
 
-.DEFAULT_GOAL := TARGETS
+.DEFAULT_GOAL := targets
 
 QEMUOPTS = -hda $(UCOREIMG)
 
 .PHONY: qemu qemu-nox gdb debug debug-mon debug-nox
-qemu-mon: $(UCOREIMG)
+qemu-mon: targets
 	$(V)$(QEMU)  -no-reboot -monitor stdio $(QEMUOPTS) -serial null
-qemu: $(UCOREIMG)
+qemu: targets
 	$(V)$(QEMU)  -no-reboot -parallel stdio $(QEMUOPTS) -serial null
 
-qemu-nox: $(UCOREIMG)
+qemu-nox: targets
 	$(V)$(QEMU)  -no-reboot -serial mon:stdio $(QEMUOPTS) -nographic
 
 gdb:
 	$(V)$(GDB) -q -x tools/gdbinit
 
-debug: $(UCOREIMG)
+debug: targets
 	$(V)$(QEMU) -S -s -parallel stdio $(QEMUOPTS) -serial null
 
-debug-mon: $(UCOREIMG)
+debug-mon: targets
 	$(V)$(QEMU) -S -s -monitor stdio $(QEMUOPTS) -parallel null -serial null
 
-debug-nox: $(UCOREIMG)
+debug-nox: targets
 	$(V)$(QEMU) -S -s -serial mon:stdio $(QEMUOPTS) -nographic
 
 .PHONY: grade touch
@@ -283,7 +283,7 @@ handin: distclean
 	$(V)$(TAR) -cf - `find . -type f -o -type d | grep -v '^\.$$' | grep -v '/CVS/' \
 					| grep -v '/\.git/' | grep -v '/\.svn/' | grep -v "$(HANDIN)"` \
 					| $(ZIP) > $(HANDIN)
-
+					
 tags:
 	@echo TAGS ALL
 	$(V)rm -f cscope.files cscope.in.out cscope.out cscope.po.out tags
