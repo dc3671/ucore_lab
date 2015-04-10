@@ -1,4 +1,4 @@
-PROJ	:= 5
+PROJ	:= 8
 EMPTY	:=
 SPACE	:= $(EMPTY) $(EMPTY)
 SLASH	:= /
@@ -128,7 +128,8 @@ KINCLUDE	+= kern/debug/ \
 			   kern/trap/ \
 			   kern/mm/ \
 			   kern/libs/ \
-			   kern/sync/
+			   kern/sync/ \
+			   kern/fs/
 
 KSRCDIR		+= kern/init \
 			   kern/libs \
@@ -136,7 +137,8 @@ KSRCDIR		+= kern/init \
 			   kern/driver \
 			   kern/trap \
 			   kern/mm \
-			   kern/sync
+			   kern/sync \
+			   kern/fs
 
 KCFLAGS		+= $(addprefix -I,$(KINCLUDE))
 
@@ -154,20 +156,6 @@ $(kernel): $(KOBJS)
 	$(V)$(LD) $(LDFLAGS) -T tools/kernel.ld -o $@ $(KOBJS)
 	@$(OBJDUMP) -S $@ > $(call asmfile,kernel)
 	@$(OBJDUMP) -t $@ | $(SED) '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(call symfile,kernel)
-
-$(call create_target,kernel)
-
-
-# create kernel_nopage target
-kernel_nopage = $(call totarget,kernel_nopage)
-
-$(kernel_nopage): tools/kernel_nopage.ld
-
-$(kernel_nopage): $(KOBJS)
-	@echo + ld $@
-	$(V)$(LD) $(LDFLAGS) -T tools/kernel_nopage.ld -o $@ $(KOBJS)
-	@$(OBJDUMP) -S $@ > $(call asmfile,kernel_nopage)
-	@$(OBJDUMP) -t $@ | $(SED) '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $(call symfile,kernel_nopage)
 
 $(call create_target,kernel)
 
@@ -199,20 +187,29 @@ $(call create_target_host,sign,sign)
 # create ucore.img
 UCOREIMG	:= $(call totarget,ucore.img)
 
-$(UCOREIMG): $(kernel) $(bootblock) $(kernel_nopage)
+$(UCOREIMG): $(kernel) $(bootblock)
 	$(V)dd if=/dev/zero of=$@ count=10000
 	$(V)dd if=$(bootblock) of=$@ conv=notrunc
 	$(V)dd if=$(kernel) of=$@ seek=1 conv=notrunc
 
 $(call create_target,ucore.img)
 
+# -------------------------------------------------------------------
+
+# create swap.img
+SWAPIMG		:= $(call totarget,swap.img)
+
+$(SWAPIMG):
+	$(V)dd if=/dev/zero of=$@ bs=1M count=128
+
+$(call create_target,swap.img)
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 $(call finish_all)
 
-IGNORE_ALLDEPS	= gdb \
-				  clean \
-				  distclean \
+IGNORE_ALLDEPS	= clean \
+				  dist-clean \
 				  grade \
 				  touch \
 				  print-.+ \
@@ -228,34 +225,34 @@ TARGETS: $(TARGETS)
 
 .DEFAULT_GOAL := TARGETS
 
-QEMUOPTS = -hda $(UCOREIMG)
+QEMUOPTS = -hda $(UCOREIMG) -drive file=$(SWAPIMG),media=disk,cache=writeback
 
-.PHONY: qemu qemu-nox gdb debug debug-mon debug-nox
-qemu-mon: $(UCOREIMG)
+.PHONY: qemu qemu-nox debug debug-nox
+qemu-mon: $(UCOREIMG) $(SWAPIMG)
 	$(V)$(QEMU)  -no-reboot -monitor stdio $(QEMUOPTS) -serial null
-qemu: $(UCOREIMG)
+qemu: $(UCOREIMG) $(SWAPIMG)
 	$(V)$(QEMU)  -no-reboot -parallel stdio $(QEMUOPTS) -serial null
 
-qemu-nox: $(UCOREIMG)
+qemu-nox: $(UCOREIMG) $(SWAPIMG)
 	$(V)$(QEMU)  -no-reboot -serial mon:stdio $(QEMUOPTS) -nographic
 
-gdb:
-	$(V)$(GDB) -q -x tools/gdbinit
+TERMINAL := konsole
 
-debug: $(UCOREIMG)
-	$(V)$(QEMU) -S -s -parallel stdio $(QEMUOPTS) -serial null
+debug: $(UCOREIMG) $(SWAPIMG)
+	$(V)$(QEMU) -S -s -parallel stdio $(QEMUOPTS) -serial null &
+	$(V)sleep 2
+	$(V)$(TERMINAL) -e "$(GDB) -q -x tools/gdbinit"
 
-debug-mon: $(UCOREIMG)
-	$(V)$(QEMU) -S -s -monitor stdio $(QEMUOPTS) -parallel null -serial null
-
-debug-nox: $(UCOREIMG)
-	$(V)$(QEMU) -S -s -serial mon:stdio $(QEMUOPTS) -nographic
+debug-nox: $(UCOREIMG) $(SWAPIMG)
+	$(V)$(QEMU) -S -s -serial mon:stdio $(QEMUOPTS) -nographic &
+	$(V)sleep 2
+	$(V)$(TERMINAL) -e "$(GDB) -q -x tools/gdbinit"
 
 .PHONY: grade touch
 
 GRADE_GDB_IN	:= .gdb.in
 GRADE_QEMU_OUT	:= .qemu.out
-HANDIN			:= lab2-handin.tar.gz
+HANDIN			:= proj$(PROJ)-handin.tar.gz
 
 TOUCH_FILES		:= kern/trap/trap.c
 
@@ -271,18 +268,20 @@ touch:
 print-%:
 	@echo $($(shell echo $(patsubst print-%,%,$@) | $(TR) [a-z] [A-Z]))
 
-.PHONY: clean distclean handin tags
+.PHONY: clean dist-clean handin packall tags
 clean:
 	$(V)$(RM) $(GRADE_GDB_IN) $(GRADE_QEMU_OUT) cscope* tags
-	$(V)$(RM) -r $(OBJDIR) $(BINDIR)
+	-$(RM) -r $(OBJDIR) $(BINDIR)
 
-distclean: clean
-	$(V)$(RM) $(HANDIN)
+dist-clean: clean
+	-$(RM) $(HANDIN)
 
-handin: distclean
-	$(V)$(TAR) -cf - `find . -type f -o -type d | grep -v '^\.$$' | grep -v '/CVS/' \
-					| grep -v '/\.git/' | grep -v '/\.svn/' | grep -v "$(HANDIN)"` \
-					| $(ZIP) > $(HANDIN)
+handin: packall
+	@echo Please visit http://learn.tsinghua.edu.cn and upload $(HANDIN). Thanks!
+
+packall: clean
+	@$(RM) -f $(HANDIN)
+	@tar -czf $(HANDIN) `find . -type f -o -type d | grep -v '^\.*$$' | grep -vF '$(HANDIN)'`
 
 tags:
 	@echo TAGS ALL

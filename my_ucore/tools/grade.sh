@@ -310,24 +310,27 @@ quick_check() {
 ## kernel image
 osimg=$(make_print ucoreimg)
 
+## swap image
+swapimg=$(make_print swapimg)
+
 ## set default qemu-options
-qemuopts="-hda $osimg"
+qemuopts="-hda $osimg -drive file=$swapimg,media=disk,cache=writeback"
 
 ## set break-function, default is readline
 brkfun=readline
 
 ## check now!!
 
-quick_run 'Check PMM'
+quick_run 'Check SWAP'
 
-pts=20
+pts=5
 quick_check 'check pmm'                                         \
     'memory management: default_pmm_manager'                     \
     'check_alloc_page() succeeded!'                             \
     'check_pgdir() succeeded!'                                  \
     'check_boot_pgdir() succeeded!'
 
-pts=20
+pts=5
 quick_check 'check page table'                                  \
     'PDE(0e0) c0000000-f8000000 38000000 urw'                   \
     '  |-- PTE(38000) c0000000-f8000000 38000000 -rw'           \
@@ -336,29 +339,27 @@ quick_check 'check page table'                                  \
     '  |-- PTE(00001) fafeb000-fafec000 00001000 -rw'
 
 pts=10
-quick_check 'check ring 0'										\
-	'0: @ring 0'												\
-	'0:  cs = 8'												\
-	'0:  ds = 10'												\
-	'0:  es = 10'												\
-	'0:  ss = 10'
+quick_check 'check vmm'                                         \
+    'check_vma_struct() succeeded!'                             \
+    'page fault at 0x00000100: K/W [no page found].'            \
+    'check_pgfault() succeeded!'                                \
+    'check_vmm() succeeded.'
 
-quick_check 'check switch to ring 3'							\
-	'+++ switch to  user  mode +++'								\
-	'1: @ring 3'												\
-	'1:  cs = 1b'												\
-	'1:  ds = 23'												\
-	'1:  es = 23'												\
-	'1:  ss = 23'
+pts=20
+quick_check 'check swap page fault'                             \
+    'page fault at 0x00001000: K/W [no page found].'            \
+    'page fault at 0x00002000: K/W [no page found].'            \
+    'page fault at 0x00003000: K/W [no page found].'            \
+    'page fault at 0x00004000: K/W [no page found].'            \
+    'write Virt Page e in fifo_check_swap'			\
+    'page fault at 0x00005000: K/W [no page found].'		\
+    'page fault at 0x00001000: K/W [no page found]'		\
+    'page fault at 0x00002000: K/W [no page found].'		\
+    'page fault at 0x00003000: K/W [no page found].'		\
+    'page fault at 0x00004000: K/W [no page found].'		\
+    'check_swap() succeeded!'
 
-quick_check 'check switch to ring 0'							\
-	'+++ switch to kernel mode +++'								\
-	'2: @ring 0'												\
-	'2:  cs = 8'												\
-	'2:  ds = 10'												\
-	'2:  es = 10'												\
-	'2:  ss = 10'
-
+pts=5
 quick_check 'check ticks'										\
 	'++ setup timer interrupts'									\
 	'100 ticks'													\
