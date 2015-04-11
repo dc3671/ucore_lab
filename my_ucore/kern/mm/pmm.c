@@ -10,6 +10,7 @@
 #include <error.h>
 #include <swap.h>
 #include <vmm.h>
+#include <kmalloc.h>
 
 /* *
  * Task State Segment:
@@ -348,6 +349,8 @@ pmm_init(void) {
     check_boot_pgdir();
 
     print_pgdir();
+
+    kmalloc_init();
 
 }
 

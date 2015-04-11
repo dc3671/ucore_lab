@@ -7,6 +7,7 @@
 #include <pmm.h>
 #include <x86.h>
 #include <swap.h>
+#include <kmalloc.h>
 
 /* 
   vmm design include two parts: mm_struct (mm) & vma_struct (vma)
@@ -145,7 +146,7 @@ mm_destroy(struct mm_struct *mm) {
     list_entry_t *list = &(mm->mmap_list), *le;
     while ((le = list_next(list)) != list) {
         list_del(le);
-        kfree(le2vma(le, list_link),sizeof(struct vma_struct));  //kfree vma        
+        kfree(le2vma(le, list_link), sizeof(struct vma_struct));  //kfree vma        
     }
     kfree(mm, sizeof(struct mm_struct)); //kfree mm
     mm=NULL;
