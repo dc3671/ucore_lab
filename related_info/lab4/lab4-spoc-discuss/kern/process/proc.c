@@ -24,7 +24,6 @@ process state       :     meaning               -- reason
     PROC_SLEEPING   :   sleeping                -- try_free_pages, do_wait, do_sleep
     PROC_RUNNABLE   :   runnable(maybe running) -- proc_init, wakeup_proc, 
     PROC_ZOMBIE     :   almost dead             -- do_exit
-
 -----------------------------
 process state changing:
                                             
@@ -55,7 +54,6 @@ SYS_sleep       : process sleep                           -->do_sleep
 SYS_kill        : kill process                            -->do_kill-->proc->flags |= PF_EXITING
                                                                  -->wakeup_proc-->do_wait-->do_exit   
 SYS_getpid      : get the process's pid
-
 */
 
 // the process set's list
@@ -66,6 +64,7 @@ struct proc_struct *idleproc = NULL;
 // init procs
 struct proc_struct *initproc1 = NULL;
 struct proc_struct *initproc2 = NULL;
+struct proc_struct *initproc3 = NULL;
 // current proc
 struct proc_struct *current = NULL;
 
@@ -100,6 +99,7 @@ alloc_proc(void) {
         proc->state = PROC_UNINIT;
         proc->pid = -1;
         proc->cr3 = boot_cr3;
+        cprintf ("alloc_page: initialize proc\n");
     }
     return proc;
 }
@@ -167,6 +167,7 @@ proc_run(struct proc_struct *proc) {
             load_esp0(next->kstack + KSTACKSIZE);
             lcr3(next->cr3);
             switch_to(&(prev->context), &(next->context));
+            cprintf ("proc_run: pid=%d running\n", proc->pid);
         }
         local_intr_restore(intr_flag);
     }
@@ -208,6 +209,7 @@ kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
     tf.tf_regs.reg_ebx = (uint32_t)fn;
     tf.tf_regs.reg_edx = (uint32_t)arg;
     tf.tf_eip = (uint32_t)kernel_thread_entry;
+    cprintf ("kernel_thread: new kernel thread ready to fork\n");
     return do_fork(clone_flags | CLONE_VM, 0, &tf);
 }
 
@@ -217,7 +219,12 @@ setup_kstack(struct proc_struct *proc) {
     struct Page *page = alloc_pages(KSTACKPAGE);
     if (page != NULL) {
         proc->kstack = (uintptr_t)page2kva(page);
+        cprintf ("setup_kstack: pid=%d, stack at 0x%08x\n", proc->pid, proc->kstack);
         return 0;
+    }
+    else
+    {
+        cprintf ("setup_kstack: pid=%d, failed!\n", proc->pid);
     }
     return -E_NO_MEM;
 }
@@ -241,6 +248,7 @@ copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf) {
 
     proc->context.eip = (uintptr_t)forkret;
     proc->context.esp = (uintptr_t)(proc->tf);
+    cprintf ("copy_thread : pid = %d, esp = 0x%08x, eip = 0x%08x\n", proc->pid, proc->context.eip, proc->context.esp);
 }
 
 /* do_fork -     parent process for a new child process
@@ -286,8 +294,9 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     //    7. set ret vaule using child proc's pid
     nr_process++;
     ret = proc->pid;
-	//  8. set parent
-	proc->parent=current;
+    //  8. set parent
+    proc->parent=current;
+    cprintf ("do_fork: get new process pid=%d, parent=%d\n", proc->pid, proc->parent);
 fork_out:
     return ret;
 
@@ -313,29 +322,30 @@ do_wait(int pid, int *code_store) {
     struct proc_struct *proc;
     bool intr_flag, haskid;
 repeat:
-	cprintf("do_wait: begin\n");
+    cprintf("do_wait: begin\n");
     haskid = 0;
-	list_entry_t *list = &proc_list,  *le = list;
-	while ((le = list_next(le)) != list) {
-		proc = le2proc(le, list_link);
-		if (proc != NULL) {
-			 haskid = 1;
-		    if (proc->state == PROC_ZOMBIE) {
-			     goto found;
-		   }
-		}
-	}
+    list_entry_t *list = &proc_list,  *le = list;
+    while ((le = list_next(le)) != list) {
+        proc = le2proc(le, list_link);
+        if (proc != NULL) {
+             haskid = 1;
+            if (proc->state == PROC_ZOMBIE) {
+                 goto found;
+           }
+        }
+    }
     if (haskid) {
-		cprintf("do_wait: has kid begin\n");
+        cprintf("do_wait: has kid begin\n");
         current->state = PROC_SLEEPING;
         current->wait_state = WT_CHILD;
+        cprintf ("do_wait: switch pid %d to waiting.\n", current->pid);
         schedule();
         goto repeat;
     }
     return -E_BAD_PROC;
 
 found:
-	cprintf("do_wait: has kid find child  pid%d\n",proc->pid);
+    cprintf("do_wait: has kid find child  pid%d\n",proc->pid);
     if (proc == idleproc ) {
         panic("wait idleproc \n");
     }
@@ -358,10 +368,10 @@ do_exit(int error_code) {
     if (current == idleproc) {
         panic("idleproc exit.\n");
     }
-	cprintf(" do_exit: proc pid %d will exit\n", current->pid);
-	cprintf(" do_exit: proc  parent %x\n", current->parent);
+    cprintf(" do_exit: proc pid %d will exit\n", current->pid);
+    cprintf(" do_exit: proc  parent %x\n", current->parent);
     current->state = PROC_ZOMBIE;
-	bool intr_flag;
+    bool intr_flag;
     struct proc_struct *proc;
     local_intr_save(intr_flag);
     {
@@ -369,9 +379,9 @@ do_exit(int error_code) {
         if (proc->wait_state == WT_CHILD) {
             wakeup_proc(proc);
         }
-	}
+    }
     local_intr_restore(intr_flag);
-	schedule();
+    schedule();
     panic("do_exit will not return!! %d.\n", current->pid);
 }
 
@@ -379,9 +389,9 @@ do_exit(int error_code) {
 static int
 init_main(void *arg) {
     cprintf(" kernel_thread, pid = %d, name = %s\n", current->pid, get_proc_name(current));
-	schedule();
+    schedule();
     cprintf(" kernel_thread, pid = %d, name = %s , arg  %s \n", current->pid, get_proc_name(current), (const char *)arg);
-	schedule();
+    schedule();
     cprintf(" kernel_thread, pid = %d, name = %s ,  en.., Bye, Bye. :)\n",current->pid, get_proc_name(current));
     return 0;
 }
@@ -409,16 +419,21 @@ proc_init(void) {
 
     int pid1= kernel_thread(init_main, "init main1: Hello world!!", 0);
     int pid2= kernel_thread(init_main, "init main2: Hello world!!", 0);
-    if (pid1 <= 0 || pid2<=0) {
-        panic("create kernel thread init_main1 or 2 failed.\n");
+    int pid3= kernel_thread(init_main, "init main3: Hello earth!", 0);
+
+    if (pid1 <= 0 || pid2<=0 || pid3 <= 0) {
+        panic("create kernel thread init_main 1 or 2 or 3 failed.\n");
     }
 
     initproc1 = find_proc(pid1);
-	initproc2 = find_proc(pid2);
+    initproc2 = find_proc(pid2);
+    initproc3 = find_proc(pid3);
     set_proc_name(initproc1, "init1");
-	set_proc_name(initproc2, "init2");
+    set_proc_name(initproc2, "init2");
+    set_proc_name(initproc3, "init3_hahaha");
     cprintf("proc_init:: Created kernel thread init_main--> pid: %d, name: %s\n",initproc1->pid, initproc1->name);
-	cprintf("proc_init:: Created kernel thread init_main--> pid: %d, name: %s\n",initproc2->pid, initproc2->name);
+    cprintf("proc_init:: Created kernel thread init_main--> pid: %d, name: %s\n",initproc2->pid, initproc2->name);
+    cprintf("proc_init:: Created kernel thread init_main--> pid: %d, name: %s\n",initproc3->pid, initproc3->name);
     assert(idleproc != NULL && idleproc->pid == 0);
 }
 
@@ -431,4 +446,3 @@ cpu_idle(void) {
         }
     }
 }
-
