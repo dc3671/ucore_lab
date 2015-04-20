@@ -11,6 +11,7 @@ wakeup_proc(struct proc_struct *proc) {
     local_intr_save(intr_flag);
     {
         if (proc->state != PROC_RUNNABLE) {
+            cprintf ("wakeup_proc : wake up %d.\n", proc->pid);
             proc->state = PROC_RUNNABLE;
             proc->wait_state = 0;
         }
@@ -28,6 +29,7 @@ schedule(void) {
     struct proc_struct *next = NULL;
     local_intr_save(intr_flag);
     {
+        cprintf ("schedule : before proc %d running.\n", current->pid);
         current->need_resched = 0;
         last = (current == idleproc) ? &proc_list : &(current->list_link);
         le = last;
@@ -43,6 +45,7 @@ schedule(void) {
             next = idleproc;
         }
         next->runs ++;
+        cprintf ("schedule : next proc %d will run.\n", next->pid);
         if (next != current) {
             proc_run(next);
         }

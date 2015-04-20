@@ -118,6 +118,7 @@ alloc_proc(void) {
         proc->wait_state = 0;
         proc->cptr = proc->optr = proc->yptr = NULL;
     }
+    cprintf ("alloc_proc:a new proc struct alloced.\n");
     return proc;
 }
 
@@ -125,6 +126,7 @@ alloc_proc(void) {
 char *
 set_proc_name(struct proc_struct *proc, const char *name) {
     memset(proc->name, 0, sizeof(proc->name));
+    cprintf ("set_proc_name : set name of %d to %s\n", proc->pid, name);
     return memcpy(proc->name, name, PROC_NAME_LEN);
 }
 
@@ -151,6 +153,7 @@ set_links(struct proc_struct *proc) {
 // remove_links - clean the relation links of process
 static void
 remove_links(struct proc_struct *proc) {
+    cprintf ("remove_links : clean the link of %d", proc->pid);
     list_del(&(proc->list_link));
     if (proc->optr != NULL) {
         proc->optr->yptr = proc->yptr;
@@ -204,6 +207,7 @@ get_pid(void) {
 void
 proc_run(struct proc_struct *proc) {
     if (proc != current) {
+        cprintf ("proc_run : will run %d\n", proc->pid);
         bool intr_flag;
         struct proc_struct *prev = current, *next = proc;
         local_intr_save(intr_flag);
@@ -273,6 +277,7 @@ setup_kstack(struct proc_struct *proc) {
     struct Page *page = alloc_pages(KSTACKPAGE);
     if (page != NULL) {
         proc->kstack = (uintptr_t)page2kva(page);
+        cprintf ("setup_kstack for %d at 0x%08x\n", proc->pid, proc->kstack);
         return 0;
     }
     return -E_NO_MEM;
@@ -281,6 +286,7 @@ setup_kstack(struct proc_struct *proc) {
 // put_kstack - free the memory space of process kernel stack
 static void
 put_kstack(struct proc_struct *proc) {
+    cprintf ("free the stack of %d at 0x%08x\n", proc->pid, proc->kstack);
     free_pages(kva2page((void *)(proc->kstack)), KSTACKPAGE);
 }
 
@@ -295,12 +301,14 @@ setup_pgdir(struct mm_struct *mm) {
     memcpy(pgdir, boot_pgdir, PGSIZE);
     pgdir[PDX(VPT)] = PADDR(pgdir) | PTE_P | PTE_W;
     mm->pgdir = pgdir;
+    cprintf ("setup the page directory table at 0x%08x\n", pgdir);
     return 0;
 }
 
 // put_pgdir - free the memory space of PDT
 static void
 put_pgdir(struct mm_struct *mm) {
+    cprintf ("free the page directory table at 0x%08x\n", mm->pgdir);
     free_page(kva2page(mm->pgdir));
 }
 
@@ -309,6 +317,7 @@ put_pgdir(struct mm_struct *mm) {
 static int
 copy_mm(uint32_t clone_flags, struct proc_struct *proc) {
     struct mm_struct *mm, *oldmm = current->mm;
+    cprintf ("copy the memory of %d to the new process %d\n", current->pid, proc->pid);
 
     /* current is a kernel thread */
     if (oldmm == NULL) {
@@ -355,6 +364,7 @@ bad_mm:
 //             - setup the kernel entry point and stack of process
 static void
 copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf) {
+    cprintf ("copy_thread : set proc %d stack at 0x%08x tf at 0x%08x\n", proc->pid, esp, tf);
     proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE) - 1;
     *(proc->tf) = *tf;
     proc->tf->tf_regs.reg_eax = 0;
@@ -363,6 +373,7 @@ copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf) {
 
     proc->context.eip = (uintptr_t)forkret;
     proc->context.esp = (uintptr_t)(proc->tf);
+    cprintf ("\tnow eip at 0x%08x, esp at 0x%08x\n", proc->context.eip, proc->context.esp);
 }
 
 /* do_fork -     parent process for a new child process
@@ -428,6 +439,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     }
     local_intr_restore(intr_flag);
 
+    cprintf ("do_fork: fork process %d to %d\n", current->pid, proc->pid);
     wakeup_proc(proc);
 
     ret = proc->pid;
@@ -464,6 +476,7 @@ do_exit(int error_code) {
         }
         current->mm = NULL;
     }
+    cprintf ("do_exit : proc %d change to ZOMBIE. exit code is %d\n", current->pid, error_code);
     current->state = PROC_ZOMBIE;
     current->exit_code = error_code;
     
@@ -472,6 +485,7 @@ do_exit(int error_code) {
     local_intr_save(intr_flag);
     {
         proc = current->parent;
+        cprintf ("do_exit: test proc %d\n", proc->pid);
         if (proc->wait_state == WT_CHILD) {
             wakeup_proc(proc);
         }
@@ -510,15 +524,19 @@ load_icode(unsigned char *binary, size_t size) {
 
     int ret = -E_NO_MEM;
     struct mm_struct *mm;
+    cprintf ("load_icode : load ELF program for proc %d\n", current->pid);
     //(1) create a new mm for current process
+    cprintf ("load_icode : 1.create memory for process.\n");
     if ((mm = mm_create()) == NULL) {
         goto bad_mm;
     }
     //(2) create a new PDT, and mm->pgdir= kernel virtual addr of PDT
+    cprintf ("load_icode : 2.create PDT for process.\n");
     if (setup_pgdir(mm) != 0) {
         goto bad_pgdir_cleanup_mm;
     }
     //(3) copy TEXT/DATA section, build BSS parts in binary to memory space of process
+    cprintf ("load_icode : 3.build BSS for process.\n");
     struct Page *page;
     //(3.1) get the file header of the bianry program (ELF format)
     struct elfhdr *elf = (struct elfhdr *)binary;
@@ -602,6 +620,7 @@ load_icode(unsigned char *binary, size_t size) {
         }
     }
     //(4) build user stack memory
+    cprintf ("load_icode : 4.build stack for process.\n");
     vm_flags = VM_READ | VM_WRITE | VM_STACK;
     if ((ret = mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags, NULL)) != 0) {
         goto bad_cleanup_mmap;
@@ -612,12 +631,14 @@ load_icode(unsigned char *binary, size_t size) {
     assert(pgdir_alloc_page(mm->pgdir, USTACKTOP-4*PGSIZE , PTE_USER) != NULL);
     
     //(5) set current process's mm, sr3, and set CR3 reg = physical addr of Page Directory
+    cprintf ("load_icode : 5.set memory cr3.\n");
     mm_count_inc(mm);
     current->mm = mm;
     current->cr3 = PADDR(mm->pgdir);
     lcr3(PADDR(mm->pgdir));
 
     //(6) setup trapframe for user environment
+    cprintf ("load_icode : 6.set trapframe, working in user mode.\n");
     struct trapframe *tf = current->tf;
     memset(tf, 0, sizeof(struct trapframe));
     /* LAB5:EXERCISE1 YOUR CODE
@@ -677,6 +698,7 @@ do_execve(const char *name, size_t len, unsigned char *binary, size_t size) {
         goto execve_exit;
     }
     set_proc_name(current, local_name);
+    cprintf ("do_execve : finish execve, %d add to scheduler list.\n", current->pid);
     return 0;
 
 execve_exit:
@@ -687,6 +709,7 @@ execve_exit:
 // do_yield - ask the scheduler to reschedule
 int
 do_yield(void) {
+    cprintf ("do_yield : resched , proc %d give up CPU.\n");
     current->need_resched = 1;
     return 0;
 }
@@ -761,6 +784,7 @@ do_kill(int pid) {
     if ((proc = find_proc(pid)) != NULL) {
         if (!(proc->flags & PF_EXITING)) {
             proc->flags |= PF_EXITING;
+            cprintf ("do_kill : proc %d will be killed.\n", pid);
             if (proc->wait_state & WT_INTERRUPTED) {
                 wakeup_proc(proc);
             }
@@ -821,7 +845,9 @@ init_main(void *arg) {
     size_t kernel_allocated_store = kallocated();
 
     int pid = kernel_thread(user_main, NULL, 0);
-    if (pid <= 0) {
+    // new user process
+    int pid2 = kernel_thread(user_main, NULL, 0);
+    if (pid <= 0 || pid2 <= 0) {
         panic("create user_main failed.\n");
     }
 
