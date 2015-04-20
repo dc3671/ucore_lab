@@ -39,7 +39,7 @@ kern_init(void) {
 
     vmm_init();                 // init virtual memory management
     proc_init();                // init process table
-    
+
     ide_init();                 // init ide devices
     swap_init();                // init swap
 
@@ -49,7 +49,7 @@ kern_init(void) {
     //LAB1: CAHLLENGE 1 If you try to do it, uncomment lab1_switch_test()
     // user/kernel mode switch test
     //lab1_switch_test();
-    
+
     cpu_idle();                 // run idle process
 }
 
