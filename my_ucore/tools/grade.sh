@@ -105,7 +105,7 @@ show_msg() {
 	echo $1
 	shift
 	if [ $# -gt 0 ]; then
-		echo -e "$@" | awk '{printf "   %s\n", $0}'
+        echo -e "$@" | awk '{printf "   %s\n", $0}'
 		echo
 	fi
 }
@@ -146,13 +146,13 @@ run_qemu() {
 	if [ -n "$brkfun" ]; then
 		# find the address of the kernel $brkfun function
 		brkaddr=`$grep " $brkfun\$" $sym_table | $sed -e's/ .*$//g'`
-		brkaddr_phys=`echo $brkaddr | sed "s/^c0/00/g"`
+        brkaddr_phys=`echo $brkaddr | sed "s/^c0/00/g"`
 		(
 			echo "target remote localhost:$gdbport"
 			echo "break *0x$brkaddr"
-			if [ "$brkaddr" != "$brkaddr_phys" ]; then
-			    echo "break *0x$brkaddr_phys"
-			fi
+            if [ "$brkaddr" != "$brkaddr_phys" ]; then
+                echo "break *0x$brkaddr_phys"
+            fi
 			echo "continue"
 		) > $gdb_in
 
@@ -184,7 +184,7 @@ build_run() {
 
 	show_time
 
-	cp $qemu_out .`echo $tag | tr '[:upper:]' '[:lower:]' | sed 's/ /_/g'`.log
+    cp $qemu_out .`echo $tag | tr '[:upper:]' '[:lower:]' | sed 's/ /_/g'`.log
 }
 
 check_result() {
