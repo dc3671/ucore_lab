@@ -42,21 +42,21 @@ static struct pseudodesc idt_pd = {
 /* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
 void
 idt_init(void) {
-     /* LAB1 YOUR CODE : STEP 2 */
-     /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
-      *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
-      *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
-      *     (try "make" command in lab1, then you will find vector.S in kern/trap DIR)
-      *     You can use  "extern uintptr_t __vectors[];" to define this extern variable which will be used later.
-      * (2) Now you should setup the entries of ISR in Interrupt Description Table (IDT).
-      *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE macro to setup each item of IDT
-      * (3) After setup the contents of IDT, you will let CPU know where is the IDT by using 'lidt' instruction.
-      *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
-      *     Notice: the argument of lidt is idt_pd. try to find it!
-      */
-     /* LAB5 YOUR CODE */ 
-     //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
-     //so you should setup the syscall interrupt gate in here
+    /* LAB1 YOUR CODE : STEP 2 */
+    /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
+     *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
+     *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
+     *     (try "make" command in lab1, then you will find vector.S in kern/trap DIR)
+     *     You can use  "extern uintptr_t __vectors[];" to define this extern variable which will be used later.
+     * (2) Now you should setup the entries of ISR in Interrupt Description Table (IDT).
+     *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE macro to setup each item of IDT
+     * (3) After setup the contents of IDT, you will let CPU know where is the IDT by using 'lidt' instruction.
+     *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
+     *     Notice: the argument of lidt is idt_pd. try to find it!
+     */
+    /* LAB5 YOUR CODE */ 
+    //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
+    //so you should setup the syscall interrupt gate in here
     extern uintptr_t __vectors[];
     int i;
     for (i = 0; i < sizeof(idt) / sizeof(struct gatedesc); i ++) {
@@ -169,8 +169,8 @@ static int
 pgfault_handler(struct trapframe *tf) {
     extern struct mm_struct *check_mm_struct;
     if(check_mm_struct !=NULL) { //used for test check_swap
-            print_pgfault(tf);
-        }
+        print_pgfault(tf);
+    }
     struct mm_struct *mm;
     if (check_mm_struct != NULL) {
         assert(current == idleproc);
@@ -197,68 +197,68 @@ trap_dispatch(struct trapframe *tf) {
     int ret=0;
 
     switch (tf->tf_trapno) {
-    case T_PGFLT:  //page fault
-        if ((ret = pgfault_handler(tf)) != 0) {
-            print_trapframe(tf);
-            if (current == NULL) {
-                panic("handle pgfault failed. ret=%d\n", ret);
-            }
-            else {
-                if (trap_in_kernel(tf)) {
-                    panic("handle pgfault failed in kernel mode. ret=%d\n", ret);
+        case T_PGFLT:  //page fault
+            if ((ret = pgfault_handler(tf)) != 0) {
+                print_trapframe(tf);
+                if (current == NULL) {
+                    panic("handle pgfault failed. ret=%d\n", ret);
                 }
-                cprintf("killed by kernel.\n");
-                panic("handle user mode pgfault failed. ret=%d\n", ret); 
+                else {
+                    if (trap_in_kernel(tf)) {
+                        panic("handle pgfault failed in kernel mode. ret=%d\n", ret);
+                    }
+                    cprintf("killed by kernel.\n");
+                    panic("handle user mode pgfault failed. ret=%d\n", ret); 
+                    do_exit(-E_KILLED);
+                }
+            }
+            break;
+        case T_SYSCALL:
+            syscall();
+            break;
+        case IRQ_OFFSET + IRQ_TIMER:
+#if 0
+LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages, 
+                 then you can add code here. 
+#endif
+                 /* LAB1 YOUR CODE : STEP 3 */
+                 /* handle the timer interrupt */
+                 /* (1) After a timer interrupt, you should record this event using a global variable (increase it), such as ticks in kern/driver/clock.c
+                  * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
+                  * (3) Too Simple? Yes, I think so!
+                  */
+                 /* LAB5 YOUR CODE */
+                 /* you should upate you lab1 code (just add ONE or TWO lines of code):
+                  *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
+                  */
+                 ticks ++;
+            assert(current != NULL);
+            break;
+        case IRQ_OFFSET + IRQ_COM1:
+            c = cons_getc();
+            cprintf("serial [%03d] %c\n", c, c);
+            break;
+        case IRQ_OFFSET + IRQ_KBD:
+            c = cons_getc();
+            cprintf("kbd [%03d] %c\n", c, c);
+            break;
+        //LAB1 CHALLENGE 1 : YOUR CODE you should modify below codes.
+        case T_SWITCH_TOU:
+        case T_SWITCH_TOK:
+            panic("T_SWITCH_** ??\n");
+            break;
+        case IRQ_OFFSET + IRQ_IDE1:
+        case IRQ_OFFSET + IRQ_IDE2:
+            /* do nothing */
+            break;
+        default:
+            print_trapframe(tf);
+            if (current != NULL) {
+                cprintf("unhandled trap.\n");
                 do_exit(-E_KILLED);
             }
-        }
-        break;
-    case T_SYSCALL:
-        syscall();
-        break;
-    case IRQ_OFFSET + IRQ_TIMER:
-#if 0
-    LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages, 
-    then you can add code here. 
-#endif
-        /* LAB1 YOUR CODE : STEP 3 */
-        /* handle the timer interrupt */
-        /* (1) After a timer interrupt, you should record this event using a global variable (increase it), such as ticks in kern/driver/clock.c
-         * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
-         * (3) Too Simple? Yes, I think so!
-         */
-        /* LAB5 YOUR CODE */
-        /* you should upate you lab1 code (just add ONE or TWO lines of code):
-         *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
-         */
-        ticks ++;
-        assert(current != NULL);
-        break;
-    case IRQ_OFFSET + IRQ_COM1:
-        c = cons_getc();
-        cprintf("serial [%03d] %c\n", c, c);
-        break;
-    case IRQ_OFFSET + IRQ_KBD:
-        c = cons_getc();
-        cprintf("kbd [%03d] %c\n", c, c);
-        break;
-    //LAB1 CHALLENGE 1 : YOUR CODE you should modify below codes.
-    case T_SWITCH_TOU:
-    case T_SWITCH_TOK:
-        panic("T_SWITCH_** ??\n");
-        break;
-    case IRQ_OFFSET + IRQ_IDE1:
-    case IRQ_OFFSET + IRQ_IDE2:
-        /* do nothing */
-        break;
-    default:
-        print_trapframe(tf);
-        if (current != NULL) {
-            cprintf("unhandled trap.\n");
-            do_exit(-E_KILLED);
-        }
-        // in kernel, it must be a mistake
-        panic("unexpected trap in kernel.\n");
+            // in kernel, it must be a mistake
+            panic("unexpected trap in kernel.\n");
 
     }
 }
@@ -279,18 +279,20 @@ trap(struct trapframe *tf) {
         // keep a trapframe chain in stack
         struct trapframe *otf = current->tf;
         current->tf = tf;
-    
+        
         bool in_kernel = trap_in_kernel(tf);
-    
+        
         trap_dispatch(tf);
-    
+        
         current->tf = otf;
         if (!in_kernel) {
             if (current->flags & PF_EXITING) {
                 do_exit(-E_KILLED);
             }
             if (current->need_resched) {
-                schedule();
+                cprintf(" schedule in trap :: pid %d to ",current->pid);
+                schedule();	
+                cprintf(" pid %d \n ",current->pid);
             }
         }
     }

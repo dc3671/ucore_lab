@@ -43,6 +43,7 @@ static inline void
 lock(lock_t *lock) {
     while (!try_lock(lock)) {
         schedule();
+        
     }
 }
 

@@ -28,7 +28,7 @@ process state       :     meaning               -- reason
 
 -----------------------------
 process state changing:
-                                            
+                                             
   alloc_proc                                 RUNNING
       +                                   +--<----<--+
       +                                   + proc_run +
@@ -87,22 +87,22 @@ static struct proc_struct *
 alloc_proc(void) {
     struct proc_struct *proc = kmalloc(sizeof(struct proc_struct));
     if (proc != NULL) {
-    //LAB4:EXERCISE1 YOUR CODE
-    /*
-     * below fields in proc_struct need to be initialized
-     *       enum proc_state state;                      // Process state
-     *       int pid;                                    // Process ID
-     *       int runs;                                   // the running times of Proces
-     *       uintptr_t kstack;                           // Process kernel stack
-     *       volatile bool need_resched;                 // bool value: need to be rescheduled to release CPU?
-     *       struct proc_struct *parent;                 // the parent process
-     *       struct mm_struct *mm;                       // Process's memory management field
-     *       struct context context;                     // Switch here to run process
-     *       struct trapframe *tf;                       // Trap frame for current interrupt
-     *       uintptr_t cr3;                              // CR3 register: the base addr of Page Directroy Table(PDT)
-     *       uint32_t flags;                             // Process flag
-     *       char name[PROC_NAME_LEN + 1];               // Process name
-     */
+        //LAB4:EXERCISE1 YOUR CODE
+        /*
+         * below fields in proc_struct need to be initialized
+         *       enum proc_state state;                      // Process state
+         *       int pid;                                    // Process ID
+         *       int runs;                                   // the running times of Proces
+         *       uintptr_t kstack;                           // Process kernel stack
+         *       volatile bool need_resched;                 // bool value: need to be rescheduled to release CPU?
+         *       struct proc_struct *parent;                 // the parent process
+         *       struct mm_struct *mm;                       // Process's memory management field
+         *       struct context context;                     // Switch here to run process
+         *       struct trapframe *tf;                       // Trap frame for current interrupt
+         *       uintptr_t cr3;                              // CR3 register: the base addr of Page Directroy Table(PDT)
+         *       uint32_t flags;                             // Process flag
+         *       char name[PROC_NAME_LEN + 1];               // Process name
+         */
         proc->state = PROC_UNINIT;
         proc->pid = -1;
         proc->runs = 0;
@@ -165,7 +165,7 @@ remove_links(struct proc_struct *proc) {
         proc->yptr->optr = proc->optr;
     }
     else {
-       proc->parent->cptr = proc->optr;
+        proc->parent->cptr = proc->optr;
     }
     nr_process --;
 }
@@ -182,9 +182,9 @@ get_pid(void) {
         goto inside;
     }
     if (last_pid >= next_safe) {
-    inside:
+inside:
         next_safe = MAX_PID;
-    repeat:
+repeat:
         le = list;
         while ((le = list_next(le)) != list) {
             proc = le2proc(le, list_link);
@@ -484,7 +484,7 @@ do_exit(int error_code) {
         while (current->cptr != NULL) {
             proc = current->cptr;
             current->cptr = proc->optr;
-    
+            
             proc->yptr = NULL;
             if ((proc->optr = initproc->cptr) != NULL) {
                 initproc->cptr->yptr = proc;
@@ -499,8 +499,9 @@ do_exit(int error_code) {
         }
     }
     local_intr_restore(intr_flag);
-    
-    schedule();
+    cprintf(" schedule in do_exit :: pid %d to ",current->pid);
+    schedule();	
+    cprintf(" pid %d \n ",current->pid);
     panic("do_exit will not return!! %d.\n", current->pid);
 }
 
@@ -539,7 +540,7 @@ load_icode(unsigned char *binary, size_t size) {
     uint32_t vm_flags, perm;
     struct proghdr *ph_end = ph + elf->e_phnum;
     for (; ph < ph_end; ph ++) {
-    //(3.4) find every program section headers
+        //(3.4) find every program section headers
         if (ph->p_type != ELF_PT_LOAD) {
             continue ;
         }
@@ -550,7 +551,7 @@ load_icode(unsigned char *binary, size_t size) {
         if (ph->p_filesz == 0) {
             continue ;
         }
-    //(3.5) call mm_map fun to setup the new vma ( ph->p_va, ph->p_memsz)
+        //(3.5) call mm_map fun to setup the new vma ( ph->p_va, ph->p_memsz)
         vm_flags = 0, perm = PTE_U;
         if (ph->p_flags & ELF_PF_X) vm_flags |= VM_EXEC;
         if (ph->p_flags & ELF_PF_W) vm_flags |= VM_WRITE;
@@ -565,9 +566,9 @@ load_icode(unsigned char *binary, size_t size) {
 
         ret = -E_NO_MEM;
 
-     //(3.6) alloc memory, and  copy the contents of every program section (from, from+end) to process's memory (la, la+end)
+        //(3.6) alloc memory, and  copy the contents of every program section (from, from+end) to process's memory (la, la+end)
         end = ph->p_va + ph->p_filesz;
-     //(3.6.1) copy TEXT/DATA section of bianry program
+        //(3.6.1) copy TEXT/DATA section of bianry program
         while (start < end) {
             if ((page = pgdir_alloc_page(mm->pgdir, la, perm)) == NULL) {
                 goto bad_cleanup_mmap;
@@ -580,7 +581,7 @@ load_icode(unsigned char *binary, size_t size) {
             start += size, from += size;
         }
 
-      //(3.6.2) build BSS section of binary program
+        //(3.6.2) build BSS section of binary program
         end = ph->p_va + ph->p_memsz;
         if (start < la) {
             /* ph->p_memsz == ph->p_filesz */
@@ -734,7 +735,9 @@ repeat:
     if (haskid) {
         current->state = PROC_SLEEPING;
         current->wait_state = WT_CHILD;
-        schedule();
+        cprintf(" schedule in do_wait :: pid %d to ",current->pid);
+        schedule();	
+		cprintf(" pid %d \n ",current->pid);
         if (current->flags & PF_EXITING) {
             do_exit(-E_KILLED);
         }
@@ -790,22 +793,22 @@ kernel_execve(const char *name, unsigned char *binary, size_t size) {
 }
 
 #define __KERNEL_EXECVE(name, binary, size) ({                          \
-            cprintf("kernel_execve: pid = %d, name = \"%s\".\n",        \
-                    current->pid, name);                                \
-            kernel_execve(name, binary, (size_t)(size));                \
-        })
+cprintf("kernel_execve: pid = %d, name = \"%s\".\n",        \
+        current->pid, name);                                \
+kernel_execve(name, binary, (size_t)(size));                \
+})
 
 #define KERNEL_EXECVE(x) ({                                             \
-            extern unsigned char _binary_obj___user_##x##_out_start[],  \
-                _binary_obj___user_##x##_out_size[];                    \
-            __KERNEL_EXECVE(#x, _binary_obj___user_##x##_out_start,     \
-                            _binary_obj___user_##x##_out_size);         \
-        })
+extern unsigned char _binary_obj___user_##x##_out_start[],  \
+_binary_obj___user_##x##_out_size[];                    \
+__KERNEL_EXECVE(#x, _binary_obj___user_##x##_out_start,     \
+                _binary_obj___user_##x##_out_size);         \
+})
 
 #define __KERNEL_EXECVE2(x, xstart, xsize) ({                           \
-            extern unsigned char xstart[], xsize[];                     \
-            __KERNEL_EXECVE(#x, xstart, (size_t)xsize);                 \
-        })
+extern unsigned char xstart[], xsize[];                     \
+__KERNEL_EXECVE(#x, xstart, (size_t)xsize);                 \
+})
 
 #define KERNEL_EXECVE2(x, xstart, xsize)        __KERNEL_EXECVE2(x, xstart, xsize)
 
@@ -827,12 +830,16 @@ init_main(void *arg) {
     size_t kernel_allocated_store = kallocated();
 
     int pid = kernel_thread(user_main, NULL, 0);
+    pid = kernel_thread(user_main, NULL, 0);
+    pid = kernel_thread(user_main, NULL, 0);
     if (pid <= 0) {
         panic("create user_main failed.\n");
     }
 
     while (do_wait(0, NULL) == 0) {
-        schedule();
+        cprintf(" schedule in init_main :: pid %d to ",current->pid);
+        schedule();	
+		cprintf(" pid %d \n ",current->pid);
     }
 
     cprintf("all user-mode processes have quit.\n");
@@ -871,6 +878,8 @@ proc_init(void) {
     current = idleproc;
 
     int pid = kernel_thread(init_main, NULL, 0);
+
+    
     if (pid <= 0) {
         panic("create init_main failed.\n");
     }
@@ -887,7 +896,9 @@ void
 cpu_idle(void) {
     while (1) {
         if (current->need_resched) {
-            schedule();
+            cprintf(" schedule in cpu_idle :: pid %d to ",current->pid);
+            schedule();	
+            cprintf(" pid %d \n ",current->pid);
         }
     }
 }
