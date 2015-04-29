@@ -4,26 +4,26 @@
 /* This file contains the definitions for memory management in our OS. */
 
 /* global segment number */
-#define SEG_KTEXT   1
-#define SEG_KDATA   2
-#define SEG_UTEXT   3
-#define SEG_UDATA   4
-#define SEG_TSS     5
+#define SEG_KTEXT    1
+#define SEG_KDATA    2
+#define SEG_UTEXT    3
+#define SEG_UDATA    4
+#define SEG_TSS        5
 
 /* global descrptor numbers */
-#define GD_KTEXT    ((SEG_KTEXT) << 3)      // kernel text
-#define GD_KDATA    ((SEG_KDATA) << 3)      // kernel data
-#define GD_UTEXT    ((SEG_UTEXT) << 3)      // user text
-#define GD_UDATA    ((SEG_UDATA) << 3)      // user data
-#define GD_TSS      ((SEG_TSS) << 3)        // task segment selector
+#define GD_KTEXT    ((SEG_KTEXT) << 3)        // kernel text
+#define GD_KDATA    ((SEG_KDATA) << 3)        // kernel data
+#define GD_UTEXT    ((SEG_UTEXT) << 3)        // user text
+#define GD_UDATA    ((SEG_UDATA) << 3)        // user data
+#define GD_TSS        ((SEG_TSS) << 3)        // task segment selector
 
-#define DPL_KERNEL  (0)
+#define DPL_KERNEL    (0)
 #define DPL_USER    (3)
 
-#define KERNEL_CS   ((GD_KTEXT) | DPL_KERNEL)
-#define KERNEL_DS   ((GD_KDATA) | DPL_KERNEL)
-#define USER_CS     ((GD_UTEXT) | DPL_USER)
-#define USER_DS     ((GD_UDATA) | DPL_USER)
+#define KERNEL_CS    ((GD_KTEXT) | DPL_KERNEL)
+#define KERNEL_DS    ((GD_KDATA) | DPL_KERNEL)
+#define USER_CS        ((GD_UTEXT) | DPL_USER)
+#define USER_DS        ((GD_UDATA) | DPL_USER)
 
 /* *
  * Virtual memory map:                                          Permissions
@@ -129,7 +129,8 @@ struct e820map {
 struct Page {
     int ref;                        // page frame's reference counter
     uint32_t flags;                 // array of flags that describe the status of the page frame
-    unsigned int property;          // the num of free block, used in first fit pm manager
+    unsigned int property;          // used in buddy system, stores the order (the X in 2^X) of the continuous memory block
+    int zone_num;                   // used in buddy system, the No. of zone which the page belongs to
     list_entry_t page_link;         // free list link
     list_entry_t pra_page_link;     // used for pra (page replace algorithm)
     uintptr_t pra_vaddr;            // used for pra (page replace algorithm)
@@ -156,6 +157,11 @@ typedef struct {
     unsigned int nr_free;           // # of free pages in this free list
 } free_area_t;
 
+/* for slab style kmalloc */
+#define PG_slab                     2       // page frame is included in a slab
+#define SetPageSlab(page)           set_bit(PG_slab, &((page)->flags))
+#define ClearPageSlab(page)         clear_bit(PG_slab, &((page)->flags))
+#define PageSlab(page)              test_bit(PG_slab, &((page)->flags))
 
 #endif /* !__ASSEMBLER__ */
 
