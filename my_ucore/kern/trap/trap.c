@@ -15,6 +15,7 @@
 #include <error.h>
 #include <sched.h>
 #include <sync.h>
+#include <proc.h>
 
 #define TICK_NUM 100
 

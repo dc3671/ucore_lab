@@ -853,7 +853,7 @@ init_main(void *arg) {
     assert(nr_process == 2);
     assert(list_next(&proc_list) == &(initproc->list_link));
     assert(list_prev(&proc_list) == &(initproc->list_link));
-    assert(kernel_allocated_store == kallocated());
+
     cprintf("init check memory pass.\n");
     return 0;
 }
@@ -904,3 +904,11 @@ cpu_idle(void) {
     }
 }
 
+//FOR LAB6, set the process's priority (bigger value will get more CPU time) 
+void
+lab6_set_priority(uint32_t priority)
+{
+    if (priority == 0)
+        current->lab6_priority = 1;
+    else current->lab6_priority = priority;
+}

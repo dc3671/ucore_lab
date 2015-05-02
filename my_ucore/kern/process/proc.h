@@ -5,6 +5,7 @@
 #include <list.h>
 #include <trap.h>
 #include <memlayout.h>
+#include <skew_heap.h>
 
 
 // process's state in his life cycle
@@ -57,6 +58,12 @@ struct proc_struct {
     int exit_code;                              // exit code (be sent to parent proc)
     uint32_t wait_state;                        // waiting state
     struct proc_struct *cptr, *yptr, *optr;     // relations between processes
+    struct run_queue *rq;                       // running queue contains Process
+    list_entry_t run_link;                      // the entry linked in run queue
+    int time_slice;                             // time slice for occupying the CPU
+    skew_heap_entry_t lab6_run_pool;            // FOR LAB6 ONLY: the entry in the run pool
+    uint32_t lab6_stride;                       // FOR LAB6 ONLY: the current stride of the process 
+    uint32_t lab6_priority;                     // FOR LAB6 ONLY: the priority of process, set by lab6_set_priority(uint32_t)
 };
 
 #define PF_EXITING                  0x00000001      // getting shutdown
@@ -85,5 +92,8 @@ int do_yield(void);
 int do_execve(const char *name, size_t len, unsigned char *binary, size_t size);
 int do_wait(int pid, int *code_store);
 int do_kill(int pid);
+//FOR LAB6, set the process's priority (bigger value will get more CPU time) 
+void lab6_set_priority(uint32_t priority);
+
 #endif /* !__KERN_PROCESS_PROC_H__ */
 

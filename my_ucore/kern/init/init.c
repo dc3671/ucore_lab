@@ -12,9 +12,10 @@
 #include <ide.h>
 #include <swap.h>
 #include <proc.h>
+#include <kmonitor.h>
 
 int kern_init(void) __attribute__((noreturn));
-
+void grade_backtrace(void);
 static void lab1_switch_test(void);
 
 int
@@ -37,6 +38,7 @@ kern_init(void) {
     idt_init();                 // init interrupt descriptor table
 
     vmm_init();                 // init virtual memory management
+    sched_init();               // init scheduler
     proc_init();                // init process table
 
     ide_init();                 // init ide devices

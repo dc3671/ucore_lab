@@ -1,4 +1,4 @@
-PROJ	:= 5
+PROJ	:= 6
 EMPTY	:=
 SPACE	:= $(EMPTY) $(EMPTY)
 SLASH	:= /
@@ -307,7 +307,7 @@ build-%: touch
 
 GRADE_GDB_IN	:= .gdb.in
 GRADE_QEMU_OUT	:= .qemu.out
-HANDIN			:= proj$(PROJ)-handin.tar.gz
+HANDIN			:= lab$(PROJ)-handin.tar.gz
 
 TOUCH_FILES		:= kern/process/proc.c
 
