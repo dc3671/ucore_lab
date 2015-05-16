@@ -17,7 +17,7 @@ main(void) {
     yield();
     yield();
     yield();
-    
+
     cprintf("I am the parent.  Killing the child...\n");
 
     assert((ret = kill(pid)) == 0);
