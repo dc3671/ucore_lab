@@ -115,14 +115,14 @@ alloc_proc(void) {
         proc->cr3 = boot_cr3;
         proc->flags = 0;
         memset(proc->name, 0, PROC_NAME_LEN);
-        /* LAB5 YOUR CODE : (update LAB4 steps)
+        /* LAB5 2012012390 : (update LAB4 steps)
         * below fields(add in LAB5) in proc_struct need to be initialized	
         *       uint32_t wait_state;                        // waiting state
         *       struct proc_struct *cptr, *yptr, *optr;     // relations between processes
         */
         proc->wait_state = 0;
         proc->cptr = proc->optr = proc->yptr = NULL;
-        //LAB6 2012012057 : (update LAB5 steps)
+        //LAB6 2012012390 : (update LAB5 steps)
         /*
          * below fields(add in LAB6) in proc_struct need to be initialized
          *     struct run_queue *rq;                       // running queue contains Process
@@ -859,6 +859,8 @@ init_main(void *arg) {
     if (pid <= 0) {
         panic("create user_main failed.\n");
     }
+ extern void check_sync(void);
+    check_sync();                // check philosopher sync problem
 
     while (do_wait(0, NULL) == 0) {
         schedule();
@@ -927,4 +929,25 @@ lab6_set_priority(uint32_t priority)
     if (priority == 0)
         current->lab6_priority = 1;
     else current->lab6_priority = priority;
+}
+
+// do_sleep - set current process state to sleep and add timer with "time"
+//          - then call scheduler. if process run again, delete timer first.
+int
+do_sleep(unsigned int time) {
+    if (time == 0) {
+        return 0;
+    }
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    timer_t __timer, *timer = timer_init(&__timer, current, time);
+    current->state = PROC_SLEEPING;
+    current->wait_state = WT_TIMER;
+    add_timer(timer);
+    local_intr_restore(intr_flag);
+
+    schedule();
+
+    del_timer(timer);
+    return 0;
 }
