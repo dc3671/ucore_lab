@@ -181,7 +181,6 @@ void check_sync(void){
     int i;
 
     //check semaphore
-    /*
     cprintf("=== check semaphore ===\n");
     sem_init(&mutex, 1);
     for(i=0;i<N;i++){
@@ -193,7 +192,6 @@ void check_sync(void){
         philosopher_proc_sema[i] = find_proc(pid);
         set_proc_name(philosopher_proc_sema[i], "philosopher_sema_proc");
     }
-    */
 
     //check condition variable
     cprintf("=== check condition variable ===\n");
