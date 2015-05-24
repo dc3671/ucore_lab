@@ -267,7 +267,7 @@ check_swap(void)
      mm->pgdir = NULL;
      mm_destroy(mm);
      check_mm_struct = NULL;
-     
+         
      nr_free = nr_free_store;
      free_list = free_list_store;
 

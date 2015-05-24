@@ -16,13 +16,13 @@
  * */
 
 static const char * const error_string[MAXERROR + 1] = {
-    [0]                     NULL,
-    [E_UNSPECIFIED]         "unspecified error",
+    [0]                        NULL,
+    [E_UNSPECIFIED]            "unspecified error",
     [E_BAD_PROC]            "bad process",
-    [E_INVAL]               "invalid parameter",
-    [E_NO_MEM]              "out of memory",
+    [E_INVAL]                "invalid parameter",
+    [E_NO_MEM]                "out of memory",
     [E_NO_FREE_PROC]        "out of processes",
-    [E_FAULT]               "segmentation fault",
+    [E_FAULT]                "segmentation fault",
     [E_INVAL_ELF]           "invalid elf file",
     [E_KILLED]              "process is killed",
     [E_PANIC]               "panic failure",
@@ -42,13 +42,13 @@ static const char * const error_string[MAXERROR + 1] = {
 
 /* *
  * printnum - print a number (base <= 16) in reverse order
- * @putch:      specified putch function, print a single character
+ * @putch:        specified putch function, print a single character
  * @fd:         file descriptor
- * @putdat:     used by @putch function
+ * @putdat:        used by @putch function
  * @num:        the number will be printed
- * @base:       base for print, must be in [1, 16]
- * @width:      maximum number of digits, if the actual width is less than @width, use @padc instead
- * @padc:       character that padded on the left if the actual width is less than @width
+ * @base:        base for print, must be in [1, 16]
+ * @width:         maximum number of digits, if the actual width is less than @width, use @padc instead
+ * @padc:        character that padded on the left if the actual width is less than @width
  * */
 static void
 printnum(void (*putch)(int, void*, int), int fd, void *putdat,
@@ -70,8 +70,8 @@ printnum(void (*putch)(int, void*, int), int fd, void *putdat,
 
 /* *
  * getuint - get an unsigned int of various possible sizes from a varargs list
- * @ap:         a varargs list pointer
- * @lflag:      determines the size of the vararg that @ap points to
+ * @ap:            a varargs list pointer
+ * @lflag:        determines the size of the vararg that @ap points to
  * */
 static unsigned long long
 getuint(va_list *ap, int lflag) {
@@ -88,8 +88,8 @@ getuint(va_list *ap, int lflag) {
 
 /* *
  * getint - same as getuint but signed, we can't use getuint because of sign extension
- * @ap:         a varargs list pointer
- * @lflag:      determines the size of the vararg that @ap points to
+ * @ap:            a varargs list pointer
+ * @lflag:        determines the size of the vararg that @ap points to
  * */
 static long long
 getint(va_list *ap, int lflag) {
@@ -106,9 +106,9 @@ getint(va_list *ap, int lflag) {
 
 /* *
  * printfmt - format a string and print it by using putch
- * @putch:      specified putch function, print a single character
+ * @putch:        specified putch function, print a single character
  * @fd:         file descriptor
- * @putdat:     used by @putch function
+ * @putdat:        used by @putch function
  * @fmt:        the format string to use
  * */
 void
@@ -124,10 +124,10 @@ printfmt(void (*putch)(int, void*, int), int fd, void *putdat, const char *fmt, 
  * vprintfmt - format a string and print it by using putch, it's called with a va_list
  * instead of a variable number of arguments
  * @fd:         file descriptor
- * @putch:      specified putch function, print a single character
- * @putdat:     used by @putch function
+ * @putch:        specified putch function, print a single character
+ * @putdat:        used by @putch function
  * @fmt:        the format string to use
- * @ap:         arguments for the format string
+ * @ap:            arguments for the format string
  *
  * Call this function if you are already dealing with a va_list.
  * Or you probably want printfmt() instead.
@@ -296,15 +296,15 @@ vprintfmt(void (*putch)(int, void*, int), int fd, void *putdat, const char *fmt,
 
 /* sprintbuf is used to save enough information of a buffer */
 struct sprintbuf {
-    char *buf;          // address pointer points to the first unused memory
-    char *ebuf;         // points the end of the buffer
+    char *buf;            // address pointer points to the first unused memory
+    char *ebuf;            // points the end of the buffer
     int cnt;            // the number of characters that have been placed in this buffer
 };
 
 /* *
  * sprintputch - 'print' a single character in a buffer
- * @ch:         the character will be printed
- * @b:          the buffer to place the character @ch
+ * @ch:            the character will be printed
+ * @b:            the buffer to place the character @ch
  * */
 static void
 sprintputch(int ch, struct sprintbuf *b) {
@@ -317,7 +317,7 @@ sprintputch(int ch, struct sprintbuf *b) {
 /* *
  * snprintf - format a string and place it in a buffer
  * @str:        the buffer to place the result into
- * @size:       the size of buffer, including the trailing null space
+ * @size:        the size of buffer, including the trailing null space
  * @fmt:        the format string to use
  * */
 int
@@ -334,9 +334,9 @@ snprintf(char *str, size_t size, const char *fmt, ...) {
  * vsnprintf - format a string and place it in a buffer, it's called with a va_list
  * instead of a variable number of arguments
  * @str:        the buffer to place the result into
- * @size:       the size of buffer, including the trailing null space
+ * @size:        the size of buffer, including the trailing null space
  * @fmt:        the format string to use
- * @ap:         arguments for the format string
+ * @ap:            arguments for the format string
  *
  * The return value is the number of characters which would be generated for the
  * given input, excluding the trailing '\0'.
